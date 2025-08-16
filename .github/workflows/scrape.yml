@@ -1,0 +1,44 @@
+name: Hive notices → Discord
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"   # toutes les 10 min (UTC)
+  workflow_dispatch:         # exécution manuelle depuis l’onglet Actions
+
+permissions:
+  contents: write            # pour que le job puisse pousser state.json
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: pip install -r requirements.txt
+
+      - name: Run scraper
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+        run: python scraper.py
+
+      - name: Commit state if changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Ajoute seulement le fichier d'état
+          git add state.json || true
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: update state [skip ci]"
+            # Assure-toi d’être à jour et pousse sur la branche par défaut
+            git pull --rebase origin ${{ github.event.repository.default_branch }}
+            git push origin HEAD:${{ github.event.repository.default_branch }}
+          else
+            echo "No state change to commit."
+          fi
