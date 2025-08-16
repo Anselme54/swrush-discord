@@ -1,9 +1,7 @@
-name: Hive notices → Discord
+name: Scraper Hive
 
-# Déclenchement automatique toutes les 10 minutes et possibilité de lancement manuel
+# Permet de lancer manuellement le workflow
 on:
-  schedule:
-    - cron: '*/10 * * * *'
   workflow_dispatch:
 
 jobs:
@@ -11,22 +9,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Récupérer le contenu du dépôt
+      # Étape 1 : récupérer le dépôt
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Installer Python
+      # Étape 2 : configurer Python
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
 
-      # Installer les dépendances Python
+      # Étape 3 : installer les dépendances
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-      # Exécuter le scraper avec la variable d'environnement correcte
+      # Étape 4 : exécuter le scraper
       - name: Run scraper
         env:
-          DISCORD_WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
-        run: python scraper.py
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          python scraper.py
