@@ -1,26 +1,10 @@
-name: Hive notices → Discord
+name: Test Workflow
 
 on:
-  schedule:
-    - cron: '*/10 * * * *'  # toutes les 10 minutes
   workflow_dispatch:
 
 jobs:
-  scrape:
+  test:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      - name: Run scraper
-        env:
-          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
-        run: python scraper.py
+      - run: echo "Workflow OK"
