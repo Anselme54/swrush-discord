@@ -21,6 +21,8 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Run scraper
-        env:
-          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+      env:
+      DISCORD_WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+        run: python scraper.py
+
         run: python scraper.py
