@@ -1,34 +1,50 @@
 import os
-import requests
+import time
 from bs4 import BeautifulSoup
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.options import Options
 import discord
 
-# Webhook Discord depuis les variables d'environnement
+# Discord webhook depuis secret
 WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
 if not WEBHOOK_URL:
     raise ValueError("La variable d'environnement DISCORD_WEBHOOK_URL est manquante.")
 
-# URL de la page des annonces
+# URL des annonces
 BASE_URL = "https://withhive.com"
 GAME_URL = f"{BASE_URL}/notice/game/1952"
 
-# Récupérer la page principale
-response = requests.get(GAME_URL)
-soup = BeautifulSoup(response.text, 'html.parser')
+# Configurer Selenium en mode headless
+chrome_options = Options()
+chrome_options.add_argument("--headless")
+chrome_options.add_argument("--no-sandbox")
+chrome_options.add_argument("--disable-dev-shm-usage")
 
-# Trouver toutes les annonces
+driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+driver.get(GAME_URL)
+
+# Attendre que JavaScript charge le contenu
+time.sleep(5)  # Ajuste si besoin selon la vitesse de chargement
+
+html = driver.page_source
+driver.quit()
+
+# Parser le HTML
+soup = BeautifulSoup(html, 'html.parser')
+
+# Trouver les annonces
 annonces = soup.find_all('a', href=True)
-
-# Préparer le webhook Discord (version 2.x)
 webhook = discord.SyncWebhook.from_url(WEBHOOK_URL)
 
 for annonce in annonces:
     href = annonce['href']
     if href.startswith('/notice/1952/'):
         full_link = BASE_URL + href
-        titre = annonce.get_text(strip=True)
+        titre = annonce.get_text(strip=True) or "Nouvelle annonce"
 
-        # Récupérer l'image associée
+        # Trouver l'image associée (si présente)
         img_tag = annonce.find_previous('img')
         image_url = None
         if img_tag:
@@ -41,5 +57,5 @@ for annonce in annonces:
         if image_url:
             embed.set_thumbnail(url=image_url)
 
-        # Envoyer l'embed sur Discord
+        # Envoyer l'embed
         webhook.send(embed=embed)
