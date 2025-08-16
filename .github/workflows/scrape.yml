@@ -1,28 +1,32 @@
-name: SWRUSH notices → Discord
+name: Hive notices → Discord
 
+# Déclenchement automatique toutes les 10 minutes et possibilité de lancement manuel
 on:
   schedule:
-    - cron: '*/10 * * * *'  # toutes les 10 minutes
+    - cron: '*/10 * * * *'
   workflow_dispatch:
 
 jobs:
   scrape:
     runs-on: ubuntu-latest
+
     steps:
+      # Récupérer le contenu du dépôt
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      # Installer Python
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
 
+      # Installer les dépendances Python
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      # Exécuter le scraper avec la variable d'environnement correcte
       - name: Run scraper
-      env:
-      DISCORD_WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
-        run: python scraper.py
-
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
         run: python scraper.py
