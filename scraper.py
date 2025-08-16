@@ -1,46 +1,47 @@
+import os
 import requests
 from bs4 import BeautifulSoup
-import discord
-import os
 
-# Récupérer l'URL du webhook depuis les variables d'environnement
+# URL de la page des annonces
+BASE_URL = "https://withhive.com"
+GAME_URL = f"{BASE_URL}/notice/game/1952"
+
+# Webhook Discord depuis les variables d'environnement
 WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
 if not WEBHOOK_URL:
     raise ValueError("La variable d'environnement DISCORD_WEBHOOK_URL est manquante.")
 
-# Créer un client Discord
-client = discord.Client()
-
-# URL de la page des annonces
-base_url = "https://withhive.com/notice/game/1952"
-response = requests.get(base_url)
+# Récupérer la page principale
+response = requests.get(GAME_URL)
 soup = BeautifulSoup(response.text, 'html.parser')
 
 # Trouver toutes les annonces
 annonces = soup.find_all('a', href=True)
 
-# Filtrer les liens des annonces individuelles
 for annonce in annonces:
     href = annonce['href']
     if href.startswith('/notice/1952/'):
-        full_link = "https://withhive.com" + href
+        full_link = BASE_URL + href
         titre = annonce.get_text(strip=True)
 
-        # Récupérer l'image associée à l'annonce
+        # Essayer de récupérer l'image associée à l'annonce
+        # Cherche le premier <img> précédent le lien
         img_tag = annonce.find_previous('img')
-        image_url = img_tag['src'] if img_tag else None
+        image_url = BASE_URL + img_tag['src'] if img_tag and img_tag.get('src', '').startswith('/') else img_tag['src'] if img_tag else None
 
-        # Créer le message à envoyer sur Discord
-        embed = discord.Embed(title=titre, url=full_link)
+        # Préparer le payload pour Discord
+        embed = {
+            "title": titre,
+            "url": full_link,
+        }
         if image_url:
-            embed.set_thumbnail(url=image_url)
+            embed["thumbnail"] = {"url": image_url}
 
-        # Envoyer le message sur Discord
-        @client.event
-        async def on_ready():
-            channel = client.get_channel(123456789012345678)  # Remplacer par l'ID de ton canal
-            await channel.send(embed=embed)
-            await client.close()
+        data = {
+            "embeds": [embed]
+        }
 
-# Démarrer le client Discord
-client.run(WEBHOOK_URL)
+        # Envoyer sur Discord via webhook
+        resp = requests.post(WEBHOOK_URL, json=data)
+        if resp.status_code != 204 and resp.status_code != 200:
+            print(f"Erreur lors de l'envoi de l'annonce {titre}: {resp.status_code} - {resp.text}")
