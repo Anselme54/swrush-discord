@@ -1,4 +1,4 @@
-name: Hive notices → Discord
+name: SWRUSH notices → Discord
 
 on:
   schedule:
