@@ -59,3 +59,10 @@ for annonce in annonces:
 
         # Envoyer l'embed
         webhook.send(embed=embed)
+
+# Après avoir récupéré les annonces
+print(f"Total liens trouvés: {len(annonces)}")
+for annonce in annonces:
+    href = annonce.get('href', '')
+    print("Lien trouvé :", href)
+
