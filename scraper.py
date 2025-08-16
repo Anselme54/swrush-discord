@@ -2,7 +2,6 @@ import os
 import requests
 from bs4 import BeautifulSoup
 import discord
-from discord import Webhook, RequestsWebhookAdapter
 
 # Webhook Discord depuis les variables d'environnement
 WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
@@ -20,8 +19,8 @@ soup = BeautifulSoup(response.text, 'html.parser')
 # Trouver toutes les annonces
 annonces = soup.find_all('a', href=True)
 
-# Préparer le webhook Discord
-webhook = Webhook.from_url(WEBHOOK_URL, adapter=RequestsWebhookAdapter())
+# Préparer le webhook Discord (version 2.x)
+webhook = discord.SyncWebhook.from_url(WEBHOOK_URL)
 
 for annonce in annonces:
     href = annonce['href']
@@ -31,7 +30,11 @@ for annonce in annonces:
 
         # Récupérer l'image associée
         img_tag = annonce.find_previous('img')
-        image_url = BASE_URL + img_tag['src'] if img_tag and img_tag.get('src', '').startswith('/') else img_tag['src'] if img_tag else None
+        image_url = None
+        if img_tag:
+            src = img_tag.get('src')
+            if src:
+                image_url = BASE_URL + src if src.startswith('/') else src
 
         # Créer l'embed Discord
         embed = discord.Embed(title=titre, url=full_link)
